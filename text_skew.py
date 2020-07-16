@@ -1,8 +1,3 @@
-# import cv2
-# import numpy as np
-
-# image = cv2.imread("C:\\Users\\vladi\\Downloads\\WhatsApp Image 2020-05-07 at 19.40.56-processed.jpg")
-
 #!/usr/bin/env python
 ######################################################################
 # page_dewarp.py - Proof-of-concept of page-dewarping based on a
@@ -25,12 +20,12 @@ import scipy.optimize
 # for some reason pylint complains about cv2 members being undefined :(
 # pylint: disable=E1101
 
-PAGE_MARGIN_X = 0       # reduced px to ignore near L/R edge
-PAGE_MARGIN_Y = 0       # reduced px to ignore near T/B edge
+PAGE_MARGIN_X = 10       # reduced px to ignore near L/R edge
+PAGE_MARGIN_Y = 10       # reduced px to ignore near T/B edge
 
 OUTPUT_ZOOM = 1.0        # how much to zoom output relative to *original* image
 OUTPUT_DPI = 1200         # just affects stated DPI of PNG, not appearance
-REMAP_DECIMATE = 16      # downscaling factor for remapping image
+REMAP_DECIMATE = 1      # downscaling factor for remapping image
 
 ADAPTIVE_WINSZ = 55      # window size for adaptive threshold in reduced px
 
@@ -104,13 +99,9 @@ def debug_show(name, step, text, display):
         image = display.copy()
         height = image.shape[0]
 
-        cv2.putText(image, text, (16, height-16),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.0,
-                    (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(image, text, (16, height-16), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 3, cv2.LINE_AA)
 
-        cv2.putText(image, text, (16, height-16),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.0,
-                    (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(image, text, (16, height-16), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 1, cv2.LINE_AA)
 
         cv2.imshow(WINDOW_NAME, image)
 
@@ -785,8 +776,7 @@ def remap_image(name, img, small, page_dims, params):
     height = 0.5 * page_dims[1] * OUTPUT_ZOOM * img.shape[0]
     height = round_nearest_multiple(height, REMAP_DECIMATE)
 
-    width = round_nearest_multiple(height * page_dims[0] / page_dims[1],
-                                   REMAP_DECIMATE)
+    width = round_nearest_multiple(height * page_dims[0] / page_dims[1], REMAP_DECIMATE)
 
     print( '  output will be {}x{}'.format(width, height))
 
@@ -798,8 +788,7 @@ def remap_image(name, img, small, page_dims, params):
 
     page_x_coords, page_y_coords = np.meshgrid(page_x_range, page_y_range)
 
-    page_xy_coords = np.hstack((page_x_coords.flatten().reshape((-1, 1)),
-                                page_y_coords.flatten().reshape((-1, 1))))
+    page_xy_coords = np.hstack((page_x_coords.flatten().reshape((-1, 1)), page_y_coords.flatten().reshape((-1, 1))))
 
     page_xy_coords = page_xy_coords.astype(np.float32)
 
@@ -809,35 +798,28 @@ def remap_image(name, img, small, page_dims, params):
     image_x_coords = image_points[:, 0, 0].reshape(page_x_coords.shape)
     image_y_coords = image_points[:, 0, 1].reshape(page_y_coords.shape)
 
-    image_x_coords = cv2.resize(image_x_coords, (width, height),
-                                interpolation=cv2.INTER_CUBIC)
+    image_x_coords = cv2.resize(image_x_coords, (width, height), interpolation=cv2.INTER_CUBIC)
 
-    image_y_coords = cv2.resize(image_y_coords, (width, height),
-                                interpolation=cv2.INTER_CUBIC)
+    image_y_coords = cv2.resize(image_y_coords, (width, height), interpolation=cv2.INTER_CUBIC)
 
-    img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    #img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     
-    remapped = cv2.remap(img_gray, image_x_coords, image_y_coords,
-                         cv2.INTER_CUBIC,
-                         None, cv2.BORDER_REPLICATE)
+    remapped = cv2.remap(img, image_x_coords, image_y_coords, cv2.INTER_CUBIC, None, cv2.BORDER_REPLICATE)
     
-    thresh = cv2.adaptiveThreshold(remapped, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-                                   cv2.THRESH_BINARY, ADAPTIVE_WINSZ, 15)
+    #thresh = cv2.adaptiveThreshold(remapped, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, ADAPTIVE_WINSZ, 15)
     
     #pil_image = Image.fromarray(thresh)
     #pil_image = pil_image.convert('1')
-    cv2.imshow('remapped', remapped)
-    threshfile = name + '_thresh.png'
+    #threshfile = name + '_thresh.png'
     #pil_image.save(threshfile, dpi=(OUTPUT_DPI, OUTPUT_DPI))
 
-    if DEBUG_LEVEL >= 1:
-        height = small.shape[0]
-        width = int(round(height * float(thresh.shape[1])/thresh.shape[0]))
-        display = cv2.resize(thresh, (width, height),
-                             interpolation=cv2.INTER_AREA)
-        debug_show(name, 6, 'output', display)
+    # if DEBUG_LEVEL >= 1:
+    #     height = small.shape[0]
+    #     width = int(round(height * float(thresh.shape[1])/thresh.shape[0]))
+    #     display = cv2.resize(thresh, (width, height), interpolation=cv2.INTER_AREA)
+    #     debug_show(name, 6, 'output', display)
 
-    return threshfile
+    return remapped
 
 
 def main():
@@ -845,9 +827,7 @@ def main():
     if DEBUG_LEVEL > 0 and DEBUG_OUTPUT != 'file':
         cv2.namedWindow(WINDOW_NAME)
 
-    outfiles = []
-
-    imgfile = "C:\\Users\\vladi\\Downloads\\WhatsApp Image 2020-05-07 at 19.40.56-processed.jpg"
+    imgfile = "processed.jpg"
     img = cv2.imread(imgfile)
     small = resize_to_screen(img)
     basename = os.path.basename(imgfile)
@@ -880,32 +860,19 @@ def main():
     print( '  got', len(spans), 'spans',)
     print( 'with', sum([len(pts) for pts in span_points]), 'points.')
 
-    corners, ycoords, xcoords = keypoints_from_samples(name, small,
-                                                        pagemask,
-                                                        page_outline,
-                                                        span_points)
+    corners, ycoords, xcoords = keypoints_from_samples(name, small, pagemask, page_outline, span_points)
 
-    rough_dims, span_counts, params = get_default_params(corners,
-                                                            ycoords, xcoords)
+    rough_dims, span_counts, params = get_default_params(corners, ycoords, xcoords)
 
-    dstpoints = np.vstack((corners[0].reshape((1, 1, 2)),) +
-                            tuple(span_points))
+    dstpoints = np.vstack((corners[0].reshape((1, 1, 2)),) + tuple(span_points))
 
-    params = optimize_params(name, small,
-                                dstpoints,
-                                span_counts, params)
+    params = optimize_params(name, small, dstpoints, span_counts, params)
 
     page_dims = get_page_dims(corners, rough_dims, params)
 
     outfile = remap_image(name, img, small, page_dims, params)
+    cv2.imwrite("remapped.jpg", outfile)
 
-    outfiles.append(outfile)
-
-    print( '  wrote', outfile)
-    print()
-
-    print( 'to convert to PDF (requires ImageMagick):')
-    print( '  convert -compress Group4 ' + ' '.join(outfiles) + ' output.pdf')
     cv2.waitKey()
 
 if __name__ == '__main__':

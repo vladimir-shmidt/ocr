@@ -47,11 +47,11 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=1):
     auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
     return (auto_result, alpha, beta)
 
-image = cv2.imread("C:\\Users\\vladi\\Downloads\\WhatsApp Image 2020-05-07 at 19.40.56.jpg")
+image = cv2.imread("origin.jpg")
 auto_result, alpha, beta = automatic_brightness_and_contrast(image)
 print('alpha', alpha)
 print('beta', beta)
 cv2.imshow('auto_result', auto_result)
 cv2.waitKey()
 
-cv2.imwrite("C:\\Users\\vladi\\Downloads\\WhatsApp Image 2020-05-07 at 19.40.56-processed.jpg", image)
+cv2.imwrite("processed.jpg", auto_result)

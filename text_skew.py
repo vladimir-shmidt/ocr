@@ -827,7 +827,7 @@ def main():
     if DEBUG_LEVEL > 0 and DEBUG_OUTPUT != 'file':
         cv2.namedWindow(WINDOW_NAME)
 
-    imgfile = "processed.jpg"
+    imgfile = "C:\\Users\\John\\Downloads\\processed.jpeg"
     img = cv2.imread(imgfile)
     small = resize_to_screen(img)
     basename = os.path.basename(imgfile)
@@ -871,7 +871,7 @@ def main():
     page_dims = get_page_dims(corners, rough_dims, params)
 
     outfile = remap_image(name, img, small, page_dims, params)
-    cv2.imwrite("remapped.jpg", outfile)
+    cv2.imwrite("C:\\Users\\John\\Downloads\\remapped.jpg", outfile)
 
     cv2.waitKey()
 

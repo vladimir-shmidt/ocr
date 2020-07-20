@@ -1,4 +1,7 @@
-docker run -it -p 9998:9998 --name tika lexpredict/tika-server
+docker build --tag jamspell -f ./../ocr/Dockerfile .
 
-$result = Invoke-WebRequest -uri http://localhost:9998/tika -Method Put -Infile "remapped.jpg" -ContentType 'image/jpeg' -Headers @{'X-Tika-OCRLanguage'='rus'; 'Accept'='text/plain; charset=utf-8'}
+docker run -it -p 9998:9998 --name tika lexpredict/tika-server
+docker run -it -p 5050:80 --name jamspell jamspell
+
+$result = Invoke-WebRequest -uri http://localhost:9998/tika -Method Put -Infile "C:\\Users\\John\\Downloads\\remapped.jpg" -ContentType 'image/jpeg' -Headers @{'X-Tika-OCRLanguage'='rus'; 'Accept'='text/plain; charset=utf-8'}
 $result.Content

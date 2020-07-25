@@ -1,11 +1,15 @@
 import cv2
 from flask import Flask, request, jsonify, send_file
-from flask_swagger import swagger
-from flask_restx import Resource, Api 
+from flask_restx import Resource, Api, reqparse
+from werkzeug.datastructures import FileStorage
+import numpy
+import io
 
 app = Flask(__name__)
 api = Api(app)
-clip_hist_percent = 1
+
+upload_parser = api.parser()
+upload_parser.add_argument('file', location='files', type=FileStorage, required=True)
 
 @api.route('/api/hello')
 class Greeting(Resource):
@@ -15,13 +19,20 @@ class Greeting(Resource):
 
 # Automatic brightness and contrast optimization with optional histogram clipping
 @api.route('/api/agjust')
+@api.expect(upload_parser)
+@api.response(200, description='return adjusted image')
+@api.produces(['image/jpeg'])
 class AutoAdjust(Resource):
-    @api.res  .response(201, 'Blog post successfully created.')
     def post(self):
         '''Automatic adjust brightness and contrast'''
-        image = request.files[0]
+        clip_hist_percent = 1
+        if not request.files:
+            return 'file was not specified', 422
+        f = request.files['file']
+        npimg = numpy.fromfile(f, numpy.uint8)
+        image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
+        
         # Calculate grayscale histogram
         hist = cv2.calcHist([gray],[0],None,[256],[0,256])
         hist_size = len(hist)
@@ -52,16 +63,9 @@ class AutoAdjust(Resource):
         beta = -minimum_gray * alpha
 
         auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-        return send_file(auto_result, mimetype='image/jpg'), 200
-        #(auto_result, alpha, beta),
+        
+        _, buf = cv2.imencode('.jpeg', auto_result)
+        return send_file(io.BytesIO(buf.tobytes()), mimetype='image/jpeg')
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-#img = cv2.imread("C:\\Users\\John\\Downloads\\doc.jpeg")
-# auto_result, alpha, beta = automatic_brightness_and_contrast(img)
-# print('alpha', alpha)
-# print('beta', beta)
-# cv2.imshow('auto_result', auto_result)
-# cv2.waitKey()
-#cv2.imwrite("C:\\Users\\John\\Downloads\\processed.jpeg", img)

@@ -1,4 +1,3 @@
-
 from natasha import (
     Segmenter,
     MorphVocab,
@@ -16,6 +15,10 @@ from natasha import (
 
     Doc
 )
+import json
+
+from flask import Flask, request, jsonify, jsonify, make_response
+from flask_restx import Resource, Api, reqparse
 
 segmenter = Segmenter()
 morph_vocab = MorphVocab()
@@ -30,65 +33,66 @@ dates_extractor = DatesExtractor(morph_vocab)
 money_extractor = MoneyExtractor(morph_vocab)
 addr_extractor = AddrExtractor(morph_vocab)
 
-text = '''
-000 «ИМПУЛЬС»
-ИНН 7810789812. КПП 781001001. ОКПО 43613173. ОГРН 1207800028303
-"олное наименование организации, идентификационные коды (ИНН, КПП, ОКПО;
-ОГРН)
+class Response(object):
+    def __init__(self):
+        self.Persons = []
+        self.Organizations = []
+        self.Locations = []
 
-"СПРАВКА
+app = Flask(__name__)
+api = Api(app)
 
-исх №89 007 Мая 20205 с Санкт-Петербург
+upload_parser = api.parser()
+upload_parser.add_argument('text', location='json', required=True)
 
-'Выдана Шмидт Марине Михайловне. работающей в должности генерального
-директора ООО «Импульс», в том, что она не получала единооременное пособие
-при рождении ребенка — своего сына Шмидт Дениса Владимировича (дата
-рождения 23 Марта 2020 года).
+@api.route('/api/hello')
+class Greeting(Resource):
+    def get(self):
+        '''say hello'''
+        return 'Hello world'
 
-Справка дана для представления по месту работы отца ребенка.
+# Automatic brightness and contrast optimization with optional histogram clipping
+@api.route('/api/fix')
+@api.expect(upload_parser)
+@api.response(200, description='correct grammar')
+@api.produces(['application/json'])
+class GrammaCorection(Resource):
+    def post(self):
+        args = upload_parser.parse_args()
+        print(args)
+        text = args['text']
+        print(text)
+        text = text.replace('\'', '')
 
-мл
+        doc = Doc(text)
 
+        doc.segment(segmenter)
+        doc.tag_morph(morph_tagger)
+        doc.parse_syntax(syntax_parser)
+        doc.tag_ner(ner_tagger)
 
-'''
-text = text.replace('\'', '`')
+        for token in doc.tokens:
+            token.lemmatize(morph_vocab)
+        for span in doc.spans:
+            span.normalize(morph_vocab)
 
-doc = Doc(text)
+        response = Response()
+        for x in doc.spans:
+            if x.type == 'PER':
+                response.Persons.append(x.normal)
+            if x.type == 'ORG':
+                response.Organizations.append(x.normal)
+            if x.type == 'LOC':
+                response.Locations.append(x.normal)
 
-doc.segment(segmenter)
-# print(doc)
-# print(doc.sents[:2])
-# print(doc.tokens[:5])
+        for span in doc.spans:
+            if span.type == PER:
+                span.extract_fact(names_extractor)
+        return make_response(jsonify({
+            'persons': response.Persons, 
+            'organizations': response.Organizations,
+            'locations': response.Locations
+        }), 200)
 
-doc.tag_morph(morph_tagger)
-doc.parse_syntax(syntax_parser)
-# print(doc.tokens[:5])
-
-doc.tag_ner(ner_tagger)
-# print(doc.spans[:5])
-
-doc.ner.print()
-
-# sent = doc.sents[0]
-# sent.morph.print()
-
-
-# sent.syntax.print()
-
-for token in doc.tokens:
-    token.lemmatize(morph_vocab)
-    
-{print(_.text, _.lemma) for _ in doc.tokens[:10]}
-
-for span in doc.spans:
-    span.normalize(morph_vocab)
-    
-{print(_.text, _.normal) for _ in doc.spans}
-
-for span in doc.spans:
-    if span.type == PER:
-        span.extract_fact(names_extractor)
-
-{print(_.normal, _.fact.as_dict) for _ in doc.spans if _.fact}
-
-{print(_) for _ in dates_extractor(text)}
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')

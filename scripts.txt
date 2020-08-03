@@ -3,5 +3,12 @@ docker build --tag jamspell -f ./../ocr/Dockerfile .
 docker run -it -p 9998:9998 --name tika lexpredict/tika-server
 docker run -it -p 5050:80 --name jamspell jamspell
 
-$result = Invoke-WebRequest -uri http://localhost:9998/tika -Method Put -Infile "C:\\Users\\John\\Downloads\\remapped.jpg" -ContentType 'image/jpeg' -Headers @{'X-Tika-OCRLanguage'='rus'; 'Accept'='text/plain; charset=utf-8'}
+$result = Invoke-WebRequest -uri http://localhost:9998/tika -Method Put -Infile "C:\\Users\\John\\Downloads\\656dfa56-31a6-4bb3-99e6-75d0317322ba.jpg" -ContentType 'image/jpeg' -Headers @{'X-Tika-OCRLanguage'='rus'; 'Accept'='text/plain; charset=utf-8'}
 $result.Content
+
+
+$text = "РОССИЙСКАЯ ФЕДЕРАЦИЯ г.Санкт-Петербург Государственное образовательное учреждение высшего профессионального образования «Санкт-Петербургский государственный университет аэрокосмического приборостроения» ДИПЛОМ Н № 04018 Решением Государственной аттестационной комиссии 28 июня 2011 Коваленко Николаю 'Игоревичу от ПРИСУЖДЕНА СТЕПЕНЬ МАГИСТРА МАГИСТР ТЕХНИКИ И ТЕХНОЛОГИИ по направлению: "
+$postData = [System.Text.Encoding]::UTF8.GetBytes($text)
+$result = Invoke-WebRequest -Uri 'http://localhost:5050/fix' -Method Post -Body $postData -ContentType "text/plain; charset=utf-8"
+
+http://localhost:5050/fix?text=

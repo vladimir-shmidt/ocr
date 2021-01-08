@@ -18,7 +18,7 @@ class Greeting(Resource):
         return 'Hello world'
 
 # Automatic brightness and contrast optimization with optional histogram clipping
-@api.route('/api/agjust')
+@api.route('/api/adjust')
 @api.expect(upload_parser)
 @api.response(200, description='return adjusted image')
 @api.produces(['image/jpeg'])
@@ -68,4 +68,4 @@ class AutoAdjust(Resource):
         return send_file(io.BytesIO(buf.tobytes()), mimetype='image/jpeg')
 
 if __name__ == '__main__':
-    app.run(debug=True, host=0.0.0.0)
+    app.run(debug=True, host='0.0.0.0')
